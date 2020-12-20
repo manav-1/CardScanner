@@ -98,38 +98,39 @@ def findingcontours(grayimg):
     return screenCnt
 
 def addtodatabase(numbers, emails):
-    for number in numbers:
-        phonedict["Mobile Number"] = number
-        with open("emails.json", "r+") as file:
-            data = json.load(file)
-            data.update(phonedict)
-            file.seek(0)
-            json.dump(data,file)
-    
-    for email in emails:
-        emaildict["Email"] = email
-        with open("emails.json", "r+") as file:
-            data = json.load(file)
-            data.update(emaildict)
-            file.seek(0)
-            json.dump(data,file)
+    try:
+        f = open("emails.json", "w")
+        f.write("{ }")
+        f.close()
+        if numbers == [] and emails == []:
+            return 0;
+        for number in numbers:
+            phonedict["Mobile Number"] = number
+            with open("emails.json", "r+") as file:
+                data = json.load(file)
+                data.update(phonedict)
+                file.seek(0)
+                json.dump(data,file)
+        for email in emails:
+            emaildict["Email"] = email
+            with open("emails.json", "r+") as file:
+                data = json.load(file)
+                data.update(emaildict)
+                file.seek(0)
+                json.dump(data,file)
+        with open("emails.json") as file:
+            file_data = json.load(file)
+        if isinstance(file_data, list): 
+            Collection.insert_many(file_data)   
+        else: 
+            Collection.insert_one(file_data)
+        f = open("emails.json", "w")
+        f.write("{ }")
+        f.close()
 
-    with open("emails.json") as file:
-        file_data = json.load(file)
-    if isinstance(file_data, list): 
-        Collection.insert_many(file_data)   
-    else: 
-        Collection.insert_one(file_data)
-
-
-    # with open(r'emails.json', 'r') as f:
-    #     file_data = json.load(f) 
-    # Collection.remove()
-    # if isinstance(file_data, list): 
-    #     Collection.insert_many(file_data)   
-    # else: 
-    #     Collection.insert_one(file_data)
-    return 1
+        return 1
+    except:
+        return 0
 
 
 def trnsform(orig, screenCnt, ratio):
@@ -155,21 +156,10 @@ def handle_request():
     npimg  = np.frombuffer(filestr, np.uint8)
     imagefile = cv2.imdecode(npimg , cv2.IMREAD_COLOR)
     print("Now the program is starting")
-    grayed, ratio = grayedImage(imagefile)
-    contours= findingcontours(grayed)
-    transforming = trnsform(imagefile,contours, ratio)
-    # cv2.imshow("image",transforming)
-    # while (True):
-    # # Displays the window infinitely
-    #     key = cv2.waitKey(0)
+    # grayed, ratio = grayedImage(imagefile)
+    # contours= findingcontours(grayed)
+    # transforming = trnsform(imagefile,contours, ratio)
 
-    # # Shuts down the display window and terminates
-    # # the Python process when a specific key is
-    # # pressed on the window.
-    # # 27 is the esc key
-    # # 113 is the letter 'q'
-    #     if key == 27 or key == 113:
-    #         break
     output=tesseractfunc(imagefile)
     #regular expression to find emails
     emails = re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", output)
@@ -180,30 +170,11 @@ def handle_request():
     print(emails)
 
     x = addtodatabase(numbers,emails)
+    
     if (x==1):
         return render_template("correct.html")
     else:
         return render_template("wrong.html")
-    # k=""
-    # y= x.split("\n")
 
-    # for i in y:
-    #     if ("license" in i.lower() or "licence" in i.lower()):
-    #         k=i
-    
-    # k=str(k.split(" ")[-1]) 
-
-    # if k in ids:
-    #     #print("This is the id that we're searching for", i)
-    #     result= "Valid License"
-    #     return render_template("correct.html")
-    # else:
-    #     result= "Invalid License"
-    #     return render_template("wrong.html")
-    #print("Just printing whatever information I needed is there or not", k)
-    # print(type(k))
-    # print(ids, k)
-    # print(result)
-    # return jsonify({"result":result})
 
 app.run(host="127.0.0.1" , port=5000, debug=True)
